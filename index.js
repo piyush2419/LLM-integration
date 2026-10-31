@@ -1,11 +1,17 @@
 import express from "express";
 import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
+import {ChatGoogle} from "@langchain/google";
+import { ChatGroq } from "@langchain/groq"
+
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 8000;
+
+
+app.use(express.json());
 
 const ai = new GoogleGenAI({
     apiKey: process.env.GEMINI_API_KEY,
@@ -30,8 +36,7 @@ app.get("/generate", async (req, res) => {
         });
 
         res.json({
-            success: true,
-            text: response.text
+            success: true, text: response.text
         });
 
     } catch (error) {
@@ -45,6 +50,33 @@ app.get("/generate", async (req, res) => {
     }
 });
 
+
+// using langchain
+app.post("/chat",async (req,res)=>{
+    const {prompt}=req.body
+    const ai=new ChatGroq({
+        model:"openai/gpt-oss-120b",
+        temperature:0.7,
+        maxOutputTokens:1024
+    })
+
+
+    const result=await ai.invoke([
+        {
+            role:"system",
+            content:"you are jarvis an ai assistant"
+
+        },
+        {
+            role:"user",
+            content:prompt
+        }
+    ]
+    )
+    return res.json({
+        success:true,  result:result.content
+    })
+})
 
 
 app.listen(port, () => {
